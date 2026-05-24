@@ -1,22 +1,28 @@
 # imu_pkg
-**IMU** package
+
+**IMU** package for EBIMU on ROS 2.
 
 ## Development Environment
 
-| Component   | Version          |
-|-------------|------------------|
-| **OS**      | Ubuntu 22.04     |
-| **ROS**     | Humble Hawksbill    |
-| **IMU**     | EBIMU    |
+| Component | Version |
+|-----------|---------|
+| **OS** | Ubuntu 22.04 |
+| **ROS** | Humble Hawksbill |
+| **IMU** | EBIMU |
+| **Python** | Python 3.10 |
 
-## Build
+---
+
+## 1. Setup
+
+### 1.1 Install Python Dependencies
+
+This package uses `pyserial` to communicate with the EBIMU device.
 
 ```bash
-colcon build --packages-select imu_pkg --symlink-install
-```
+pip install pyserial
 
-## Run
-
-```bash
-ros2 launch imu_pkg imu_pkg.launch.py
+cd ~/colcon_ws
+chmod 755 src/imu_pkg/scripts/install_udev_rules.sh
+sudo ./src/imu_pkg/scripts/install_udev_rules.sh
 ```

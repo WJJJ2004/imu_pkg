@@ -23,7 +23,7 @@ setup(
         ),
         (
             os.path.join('share', package_name, 'config'),
-            glob('config/*.yaml')
+            glob('config/*')
         ),
     ],
     install_requires=['setuptools'],

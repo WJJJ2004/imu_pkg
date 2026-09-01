@@ -18,7 +18,7 @@ ebimu_publisher:
     invert_accel_sign: true
 
     # Orientation reference and fixed humanoid-frame correction
-    zero_orientation_on_start: true
+    zero_orientation_on_start: false
     apply_yaw_offset: true
 
     # QoS

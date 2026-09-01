@@ -11,13 +11,15 @@ class ImuConverter:
         accel_scale: float = 9.80665,
         gyro_in_deg: bool = True,
         invert_accel_sign: bool = True,
-        zero_orientation_on_start: bool = True
+        zero_orientation_on_start: bool = True,
+        apply_yaw_offset: bool = True,
     ):
         self.frame_id = frame_id
         self.accel_scale = accel_scale
         self.gyro_in_deg = gyro_in_deg
         self.invert_accel_sign = invert_accel_sign
         self.zero_orientation_on_start = zero_orientation_on_start
+        self.apply_yaw_offset = apply_yaw_offset
 
         # =========================
         # Initial orientation
@@ -168,32 +170,37 @@ class ImuConverter:
         """
         최종 publish할 orientation quaternion을 반환한다.
 
-        zero_orientation_on_start=True:
-            시작 시점 자세를 기준 0으로 만든 상대 자세 반환
+        zero_orientation_on_start=True이면 시작 자세 대비 상대 자세를 사용하고,
+        False이면 EBIMU의 현재 자세를 그대로 사용한다.
 
-        zero_orientation_on_start=False:
-            EBIMU 원본 자세 반환
+        apply_yaw_offset=True이면 위 선택과 독립적으로 humanoid 좌표계용
+        고정 -90도 yaw 보정을 적용한다.
         """
         q_current = self.get_raw_quaternion(data)
 
-        if not self.zero_orientation_on_start:
-            return q_current
+        if self.zero_orientation_on_start:
+            if not self.orientation_initialized:
+                self.initial_orientation = q_current
+                self.orientation_initialized = True
+                q_reference = [0.0, 0.0, 0.0, 1.0]
+            else:
+                q_initial_inv = self.quaternion_inverse(
+                    self.initial_orientation
+                )
+                q_reference = self.quaternion_multiply(
+                    q_initial_inv,
+                    q_current,
+                )
+        else:
+            q_reference = q_current
 
-        if not self.orientation_initialized:
-            self.initial_orientation = q_current
-            self.orientation_initialized = True
-
-            # 시작 순간에는 단위 quaternion을 내보낸다.
-            return [0.0, 0.0, 0.0, 1.0]
-
-        q_initial_inv = self.quaternion_inverse(self.initial_orientation)
-        q_relative = self.quaternion_multiply(q_initial_inv, q_current)
-
-        # WJ: roa humanoid mapping 
-        q_output = self.quaternion_multiply(
-            q_relative,
-            self.initial_offset_quat
-        )
+        if self.apply_yaw_offset:
+            q_output = self.quaternion_multiply(
+                q_reference,
+                self.initial_offset_quat,
+            )
+        else:
+            q_output = q_reference
 
         return self.normalize_quaternion(q_output)
 

@@ -63,7 +63,8 @@ class EbimuPublisher(Node):
             accel_scale=self.accel_scale,
             gyro_in_deg=self.gyro_in_deg,
             invert_accel_sign=self.invert_accel_sign,
-            zero_orientation_on_start=self.zero_orientation_on_start
+            zero_orientation_on_start=self.zero_orientation_on_start,
+            apply_yaw_offset=self.apply_yaw_offset,
         )
 
         # =========================
@@ -91,6 +92,10 @@ class EbimuPublisher(Node):
         # Orientation
         self.zero_orientation_on_start = self.declare_parameter(
             'zero_orientation_on_start',
+            True
+        ).get_parameter_value().bool_value
+        self.apply_yaw_offset = self.declare_parameter(
+            'apply_yaw_offset',
             True
         ).get_parameter_value().bool_value
 
@@ -228,6 +233,7 @@ class EbimuPublisher(Node):
             f"  Frame ID       : {self.frame_id}\n"
             f"  Publish mode   : on serial read\n"
             f"  Zero start     : {self.zero_orientation_on_start}\n"
+            f"  Apply yaw offset: {self.apply_yaw_offset}\n"
             f"  QoS depth      : {self.qos_depth}\n"
             f"  QoS reliability: {self.qos_reliability}"
         )

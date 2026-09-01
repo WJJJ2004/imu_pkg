@@ -17,8 +17,9 @@ ebimu_publisher:
     gyro_in_deg: true
     invert_accel_sign: true
 
-    # Orientation reset
+    # Orientation reference and fixed humanoid-frame correction
     zero_orientation_on_start: true
+    apply_yaw_offset: true
 
     # QoS
     reliability: "best_effort"

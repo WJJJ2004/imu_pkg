@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import serial
 
 import rclpy
@@ -65,6 +66,8 @@ class EbimuPublisher(Node):
             invert_accel_sign=self.invert_accel_sign,
             zero_orientation_on_start=self.zero_orientation_on_start,
             apply_yaw_offset=self.apply_yaw_offset,
+            gyro_lpf_enabled=self.gyro_lpf_enabled,
+            gyro_lpf_cutoff_hz=self.gyro_lpf_cutoff_hz,
         )
 
         # =========================
@@ -89,6 +92,14 @@ class EbimuPublisher(Node):
         self.gyro_in_deg = self.declare_parameter('gyro_in_deg', True).get_parameter_value().bool_value
         self.invert_accel_sign = self.declare_parameter('invert_accel_sign', True).get_parameter_value().bool_value
 
+        # Software filtering of measured ROS-frame angular velocity only.
+        self.gyro_lpf_enabled = self.declare_parameter(
+            'gyro_lpf_enabled', True
+        ).get_parameter_value().bool_value
+        self.gyro_lpf_cutoff_hz = self.declare_parameter(
+            'gyro_lpf_cutoff_hz', 5.0
+        ).get_parameter_value().double_value
+
         # Orientation
         self.zero_orientation_on_start = self.declare_parameter(
             'zero_orientation_on_start',
@@ -109,6 +120,8 @@ class EbimuPublisher(Node):
         ).get_parameter_value().string_value
 
     def _validate_parameters(self):
+        if not math.isfinite(self.gyro_lpf_cutoff_hz) or self.gyro_lpf_cutoff_hz <= 0.0:
+            raise ValueError('gyro_lpf_cutoff_hz must be finite and positive')
         if self.qos_depth <= 0:
             self.get_logger().warn(
                 f"Invalid depth={self.qos_depth}, fallback to 100"
@@ -234,6 +247,8 @@ class EbimuPublisher(Node):
             f"  Publish mode   : on serial read\n"
             f"  Zero start     : {self.zero_orientation_on_start}\n"
             f"  Apply yaw offset: {self.apply_yaw_offset}\n"
+            f"  Gyro LPF       : {self.gyro_lpf_enabled}\n"
+            f"  Gyro LPF cutoff: {self.gyro_lpf_cutoff_hz} Hz\n"
             f"  QoS depth      : {self.qos_depth}\n"
             f"  QoS reliability: {self.qos_reliability}"
         )

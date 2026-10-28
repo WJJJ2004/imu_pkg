@@ -2,6 +2,7 @@ import math
 
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Quaternion, Vector3Stamped
+from imu_pkg.utils.gyro_lpf import GyroLowPassFilter
 
 
 class ImuConverter:
@@ -13,6 +14,8 @@ class ImuConverter:
         invert_accel_sign: bool = True,
         zero_orientation_on_start: bool = True,
         apply_yaw_offset: bool = True,
+        gyro_lpf_enabled: bool = False,
+        gyro_lpf_cutoff_hz: float = 5.0,
     ):
         self.frame_id = frame_id
         self.accel_scale = accel_scale
@@ -20,6 +23,7 @@ class ImuConverter:
         self.invert_accel_sign = invert_accel_sign
         self.zero_orientation_on_start = zero_orientation_on_start
         self.apply_yaw_offset = apply_yaw_offset
+        self.gyro_lpf = GyroLowPassFilter(gyro_lpf_enabled, gyro_lpf_cutoff_hz)
 
         # =========================
         # Initial orientation
@@ -105,9 +109,13 @@ class ImuConverter:
             gy = math.radians(gy)
             gz = math.radians(gz)
 
-        imu.angular_velocity.x = -gy
-        imu.angular_velocity.y = gx
-        imu.angular_velocity.z = gz
+        stamp = imu.header.stamp
+        filtered = self.gyro_lpf.update(
+            (-gy, gx, gz), stamp.sec * 1_000_000_000 + stamp.nanosec
+        )
+        imu.angular_velocity.x = filtered[0]
+        imu.angular_velocity.y = filtered[1]
+        imu.angular_velocity.z = filtered[2]
     # def fill_angular_velocity(self, imu, data):
     #     gx = data["gx"]
     #     gy = data["gy"]
